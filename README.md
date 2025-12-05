@@ -203,8 +203,8 @@ Jika menggunakan dataset ini:
 
 ## 📧 Contact
 
-**Researcher**: [Your Name]  
-**Institution**: [Your University]  
+**Researcher**: Lisa Ardianti 
+**Institution**: ISTEK Aisyiyah Kendari  
 **Email**: [your.email@university.ac.id]
 
 ## 📄 License
