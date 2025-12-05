@@ -124,7 +124,6 @@ flowchart TD
     ModelComp --> StatTest[Statistical Tests<br/>Friedman Test<br/>Wilcoxon Test]
     
     StatTest --> BestModel[1️⃣2️⃣ BEST MODEL SELECTION]
-    BestModel --> Winner[🏆 Decision Tree + ADASYN<br/>100% Accuracy]
     
     Winner --> Visualization[1️⃣3️⃣ VISUALIZATION]
     Visualization --> ConfMatrix[Confusion Matrix]
