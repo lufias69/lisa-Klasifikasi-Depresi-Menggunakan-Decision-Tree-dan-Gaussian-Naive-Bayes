@@ -386,15 +386,6 @@ PIPELINE EXECUTION COMPLETE!
 3. **Examine error messages** - biasanya self-explanatory
 4. **Check GitHub issues** - jika using repository
 
----
-
-## 🎉 YOU'RE READY!
-
-**Selamat menjalankan penelitian!**
-
-Semua tools dan dokumentasi sudah siap. Tinggal execute dan analyze results untuk paper Anda.
-
-**Good luck dengan publikasi Sinta 1! 🚀📊🎓**
 
 ---
 

@@ -995,7 +995,7 @@ Path forward clear: **Validate, refine, implement**.
 
 *Dokumen ini merupakan comprehensive results and discussion untuk penelitian klasifikasi depresi menggunakan machine learning.*
 
-**Prepared by:** AI Research Assistant  
+
 **Date:** December 5, 2025  
 **Project:** Depression Classification via Motor Activity  
 **Status:** Analysis Complete, Validation Pending
