@@ -302,6 +302,34 @@ Normalisasi dilakukan **per subjek** dengan alasan:
 - **Menghilangkan bias skala**: Semua subjek di-standarisasi ke skala yang sama
 - **Preservasi struktur temporal**: Pola harian tetap terjaga
 
+### 2.4 Alignment Temporal
+
+**Tujuan:** Menyeragamkan resolusi temporal data untuk konsistensi analisis
+
+**Masalah:**
+Data aktigrafi dapat memiliki resolusi berbeda:
+- Beberapa sensor record per menit
+- Lainnya per 30 detik atau per 5 menit
+- Timestamps mungkin tidak aligned perfectly
+
+**Solusi: Resampling to Hourly Intervals**
+
+**Formula Resampling (Mean Aggregation):**
+$$\bar{x}_h = \frac{1}{n_h}\sum_{i=1}^{n_h} x_i$$
+
+Dimana:
+- $\bar{x}_h$ = aktivitas rata-rata untuk jam h
+- $n_h$ = jumlah measurements dalam jam h
+- $x_i$ = aktivitas individual measurements
+
+**Keuntungan Hourly Resolution:**
+- **Reduced dimensionality**: Dari ~8640 points/6 days → 144 hourly points
+- **Noise reduction**: Averaging smooths sensor noise
+- **Computational efficiency**: Lebih cepat untuk feature extraction
+- **Clinical relevance**: Hourly patterns meaningful untuk behavior
+
+---
+
 ## 3️⃣ EKSTRAKSI FITUR
 
 Feature extraction merupakan jantung dari pendekatan machine learning untuk data time series. Proses ini mentransformasi raw time series menjadi representasi numerik yang menangkap karakteristik esensial pola aktivitas.
@@ -324,26 +352,80 @@ Total **73 features** diekstrak, dikelompokkan dalam 5 kategori utama yang masin
 ### 2.4 Alignment Temporal
 #### a) Measures of Central Tendency
 - **Mean (Rata-rata)**: Level aktivitas rata-rata keseluruhan
+
+**Formula:**
+$$\mu = \frac{1}{n}\sum_{i=1}^{n} x_i$$
+
   - Hipotesis: Pasien depresi cenderung memiliki mean aktivitas lebih rendah
+  
 - **Median**: Nilai tengah, lebih robust terhadap outlier
-- **Mode**: Nilai paling sering muncul
+
+**Formula:**
+$$Median = \begin{cases}
+x_{(n+1)/2} & \text{jika n ganjil} \\
+\frac{x_{n/2} + x_{(n/2)+1}}{2} & \text{jika n genap}
+\end{cases}$$
+
+- **Mode**: Nilai paling sering muncul (nilai dengan frekuensi tertinggi)
 
 #### b) Measures of Dispersion
 - **Standard Deviation**: Variabilitas aktivitas
+
+**Formula:**
+$$\sigma = \sqrt{\frac{1}{n}\sum_{i=1}^{n}(x_i - \mu)^2}$$
+
   - Depresi dapat dikaitkan dengan variabilitas yang lebih rendah (pola lebih monoton)
+  
 - **Variance**: Kuadrat dari standard deviation
+
+**Formula:**
+$$\sigma^2 = \frac{1}{n}\sum_{i=1}^{n}(x_i - \mu)^2$$
+
 - **Range**: Selisih maksimum-minimum
+
+**Formula:**
+$$Range = x_{max} - x_{min}$$
+
   - Range yang sempit mungkin mengindikasikan kurangnya variasi aktivitas
+  
 - **IQR (Interquartile Range)**: Range untuk 50% data tengah, robust measure
+
+**Formula:**
+$$IQR = Q_3 - Q_1$$
+
+Dimana $Q_1$ dan $Q_3$ adalah kuartil pertama dan ketiga.
 
 #### c) Measures of Shape
 - **Skewness**: Asimetri distribusi
+
+**Formula:**
+$$Skewness = \frac{n}{(n-1)(n-2)}\sum_{i=1}^{n}\left(\frac{x_i - \mu}{\sigma}\right)^3$$
+
   - Positive skew: Lebih banyak nilai rendah dengan beberapa spike tinggi
   - Negative skew: Lebih banyak nilai tinggi dengan beberapa drop rendah
   - Depresi mungkin menunjukkan pola skewness tertentu
+  
 - **Kurtosis**: "Tail heaviness" distribusi
+
+**Formula:**
+$$Kurtosis = \frac{n(n+1)}{(n-1)(n-2)(n-3)}\sum_{i=1}^{n}\left(\frac{x_i - \mu}{\sigma}\right)^4 - \frac{3(n-1)^2}{(n-2)(n-3)}$$
+
   - High kurtosis: Lebih banyak nilai ekstrem
   - Low kurtosis: Distribusi lebih uniform
+
+#### d) Additional Statistics
+
+- **Coefficient of Variation**: Mengukur variabilitas relatif
+
+**Formula:**
+$$CV = \frac{\sigma}{\mu} \times 100\%$$
+
+- **Percentiles**: Membagi distribusi menjadi bagian-bagian
+
+**Formula untuk Percentile ke-p:**
+$$P_p = x_{(n \cdot p/100)}$$
+
+Dimana percentile membagi data terurut menjadi 100 bagian sama.
 
 #### a) Aktivitas Per Jam (24 features)
 Ekstraksi rata-rata aktivitas untuk setiap jam (00:00-23:00).
@@ -496,6 +578,9 @@ Menghitung standard deviation dalam sliding windows berbagai ukuran (1 jam, 3 ja
 
 #### b) Activity Change Rate
 Rata-rata perubahan absolut aktivitas dari satu time point ke berikutnya.
+
+**Formula:**
+$$Change\_Rate = \frac{1}{n-1}\sum_{i=1}^{n-1}|x_{i+1} - x_i|$$
 
 **Mengukur:**
 - Seberapa cepat aktivitas berubah
@@ -762,6 +847,24 @@ Non-linear dimensionality reduction untuk melihat cluster structure.
 - High separation → Simple models mungkin cukup
 - High overlap → Need more complex models atau better features
 - Clear clusters → Supervised learning promising
+
+#### Autocorrelation Analysis
+
+**Tujuan:** Mengukur kemiripan time series dengan versi delayed-nya
+
+**Formula Autocorrelation dengan Lag k:**
+$$ACF(k) = \frac{\sum_{t=1}^{n-k}(x_t - \mu)(x_{t+k} - \mu)}{\sum_{t=1}^{n}(x_t - \mu)^2}$$
+
+Dimana:
+- $k$ = lag (delay) dalam time steps
+- $x_t$ = nilai pada waktu t
+- $\mu$ = mean dari series
+- $ACF(k)$ berkisar -1 hingga +1
+
+**Interpretasi:**
+- $ACF(24)$ tinggi → Strong 24-hour rhythm
+- $ACF(24)$ rendah → Weak or disrupted daily pattern
+- Depresi mungkin menunjukkan autocorrelation lebih rendah (less predictable patterns)
 
 ---
 
@@ -1687,157 +1790,7 @@ Dengan multiple pairwise tests, adjust α:
 
 ---
 
-## 🔟 HASIL EVALUASI DAN INTERPRETASI
-
-### 10.1 Ringkasan Performa Cross-Validation
-
-**Decision Tree Models:**
-Models berbasis Decision Tree menunjukkan performa CV yang superior:
-- **Best**: DT + ADASYN (F1-macro: 0.8796 ± 0.088)
-- **Good**: DT + Class Weight & SMOTE+Weight (F1-macro: 0.8343)
-- **Baseline**: DT + Original (F1-macro: 0.8136)
-
-**Key Observations:**
-✅ Semua DT models achieve F1 > 0.80 (good performance)
-✅ ADASYN provides clear advantage (~5% improvement)
-✅ Reasonable stability (std < 0.13)
-
-**Gaussian NB Models:**
-Performance substantially lower:
-- All strategies: F1-macro ≈ 0.64-0.65
-- Higher variance (std ≈ 0.14)
-- Imbalance strategies tidak improve significantly
-
-**Interpretation:**
-- **NB limitation**: Independence assumption violated (features correlated)
-- **NB limitation**: Gaussian assumption mungkin tidak fit data well
-- **DT advantage**: Can capture non-linear patterns dan feature interactions
-
-### 10.2 Test Set Performance
-
-**Winner: Decision Tree + ADASYN**
-
-**Confusion Matrix:**
-```
-                Predicted
-                Control  Condition
-Actual
-  Control           6         0
-  Condition         0         5
-```
-
-**Perfect Classification!**
-- Zero false positives
-- Zero false negatives
-- **100% accuracy** pada unseen data
-
-**Detailed Metrics:**
-- **Accuracy**: 1.0000 (11/11 correct)
-- **Precision**: 1.0000 (no false alarms)
-- **Recall**: 1.0000 (no missed cases)
-- **F1-Score**: 1.0000 (perfect balance)
-- **Specificity**: 1.0000 (all controls identified)
-- **AUC-ROC**: 1.0000 (complete separation)
-
-### 10.3 Interpretasi Hasil
-
-**A) Apakah 100% Realistis?**
-
-**Potential Concerns:**
-⚠️ **Small test set**: n=11 is limited, confidence intervals wide
-⚠️ **Lucky split?**: Specific test subjects mungkin "easy"
-⚠️ **Overfitting?**: Model too tuned to this data
-
-**Supporting Evidence:**
-✅ **Strong CV performance**: 88% CV F1 suggests genuine capability
-✅ **Consistent pattern**: Multiple DT models achieve high scores
-✅ **Biological plausibility**: Depresi has known motorik signatures
-
-**Realistic Assessment:**
-Perfect test performance likely combines:
-- **Genuine model capability**: Strong discriminative patterns exist
-- **Favorable test set**: Subjects representative but not exceptionally hard
-- **Appropriate methodology**: Good preprocessing, feature engineering, tuning
-
-**Expected Real-World:**
-- Performance likely 85-95% pada larger independent sample
-- Some patients have atypical presentations
-- Comorbidities can confound patterns
-
-**B) Mengapa Decision Tree Unggul?**
-
-**Algorithm Fit:**
-1. **Non-linearity**: Depression effects likely non-linear (e.g., disruption > certain threshold)
-2. **Interactions**: Combined features (e.g., low morning activity + weak circadian rhythm)
-3. **Threshold-based**: Clinical reality often threshold-based (e.g., sleep < 4hrs)
-4. **No assumptions**: Doesn't require normality atau independence
-
-**Versus Naive Bayes:**
-- NB assumes features independent → violated (activity features correlated)
-- NB assumes Gaussian → violated untuk some skewed features
-- NB can't capture interactions → misses combined patterns
-
-**C) Mengapa ADASYN Optimal?**
-
-**Mechanism Fit:**
-- **Focus pada decision boundary**: Depression vs control boundary might be complex
-- **Adaptive synthesis**: More samples where classes overlap (difficult cases)
-- **Density awareness**: Respects underlying data distribution better than SMOTE
-
-**Versus Other Strategies:**
-- **Original**: Insufficient minority representation
-- **Class Weight**: Helps but doesn't add information
-- **SMOTE**: Uniform sampling misses hard regions
-- **SMOTE+Weight**: Over-correction, unnecessary complexity
-
-### 10.4 Feature Importance Analysis
-
-**Top 10 Most Important Features:**
-
-1. **activity_hour_19** (0.235) - Evening activity
-   - **Interpretation**: Pasien depresi show marked reduction in evening activity
-   - **Clinical relevance**: Evening withdrawal, social disengagement
-   
-2. **circadian_rhythm_strength** (0.156) - Kekuatan ritme sirkadian
-   - **Interpretation**: Depresi disrupts circadian rhythms significantly
-   - **Clinical relevance**: Core pathophysiology of depression
-   
-3. **day_night_ratio** (0.128) - Rasio aktivitas siang-malam
-   - **Interpretation**: Ratio lebih rendah pada depresi (less differentiation)
-   - **Clinical relevance**: Blurred day-night boundaries
-   
-4. **activity_hour_13** (0.095) - Midday activity
-   - **Interpretation**: Post-lunch energy dip more pronounced
-   
-5. **intradaily_variability** (0.082) - Fragmentasi dalam-hari
-   - **Interpretation**: Lebih fragmented patterns dalam depresi
-
-**Pattern Recognized:**
-Model identifies **temporal dysregulation** as core signature:
-- When activity occurs matters more than how much
-- Evening, circadian, and day-night features dominate
-- Aligned with **chronobiological theories of depression**
-
-### 10.5 Model Comparison: Statistical Significance
-
-**Friedman Test Result:**
-- **χ² statistic**: Significant (p < 0.001)
-- **Conclusion**: Models differ significantly in performance
-- **Implication**: Choice of algorithm and strategy matters!
-
-**Pairwise Comparisons (Top 3):**
-1. **DT-ADASYN vs NB-best**: p < 0.001 (highly significant)
-2. **DT-ADASYN vs DT-Original**: p < 0.05 (significant)  
-3. **DT-ClassWeight vs DT-SMOTE**: p > 0.05 (no significant difference)
-
-**Conclusion:**
-- Decision Tree clearly superior to Naive Bayes
-- ADASYN provides significant boost over no handling
-- Class Weight and SMOTE comparable for DT
-
----
-
-## 1️⃣1️⃣ VISUALISASI DAN KOMUNIKASI HASIL
+## 🔟 VISUALISASI DAN KOMUNIKASI HASIL
 
 Visualisasi bukan sekadar "membuat grafik cantik" - ini adalah tool kritis untuk:
 - **Understanding**: Mengungkap patterns yang tidak obvious dari angka
@@ -1845,7 +1798,7 @@ Visualisasi bukan sekadar "membuat grafik cantik" - ini adalah tool kritis untuk
 - **Communication**: Menyampaikan findings ke stakeholders non-technical
 - **Publication**: Supporting evidence untuk scientific writing
 
-### 11.1 Confusion Matrix Visualization
+### 10.1 Confusion Matrix Visualization
 
 **Purpose:** Menunjukkan classification performance secara intuitif
 
@@ -1855,12 +1808,13 @@ Visualisasi bukan sekadar "membuat grafik cantik" - ini adalah tool kritis untuk
 - **Color scheme**: Green (correct) vs Red (errors)
 - **Normalization**: Percentages untuk interpretability
 
-**Key Insights:**
-- **Perfect diagonal**: All predictions correct
-- **Empty off-diagonal**: Zero errors
-- **Visual proof**: Model's capability immediately apparent
+**Interpretasi:**
+Matriks menunjukkan distribusi prediksi benar dan salah, memungkinkan identifikasi:
+- True Positives dan True Negatives (prediksi benar)
+- False Positives (Type I error) dan False Negatives (Type II error)
+- Balance antara sensitivity dan specificity
 
-### 11.2 ROC Curves Comparison
+### 10.2 ROC Curves Comparison
 
 **Purpose:** Membandingkan discrimination capability across models
 
@@ -1868,38 +1822,38 @@ Visualisasi bukan sekadar "membuat grafik cantik" - ini adalah tool kritis untuk
 - **Multi-curve**: All 10 models pada satu plot
 - **AUC values**: Annotated untuk quantitative comparison
 - **Reference line**: Diagonal showing random classifier
-- **Color coding**: By algorithm (blue=NB, red=DT)
+- **Color coding**: By algorithm untuk membedakan model
 
-**Key Insights:**
-- **DT curves**: Hugging top-left corner (excellent)
-- **NB curves**: Further from optimal (moderate)
-- **Visual ranking**: Immediately see best performers
-- **Threshold-independent**: Shows performance across all operating points
+**Interpretasi:**
+- Kurva mendekati sudut kiri atas = model excellent
+- Kurva mendekati diagonal = model lemah (seperti random guessing)
+- Area di bawah kurva (AUC) quantifies overall performance
+- Memungkinkan perbandingan threshold-independent antar model
 
-### 11.3 Activity Patterns (24-Hour Profile)
+### 10.3 Activity Patterns (24-Hour Profile)
 
 **Purpose:** Visualize the biological signature of depression
 
 **Design:**
 - **Line plots**: Hourly activity untuk condition vs control
 - **Error bands**: Show variability (mean ± SEM)
-- **Color distinction**: Red (depression) vs Blue (control)
+- **Color distinction**: Berbeda untuk setiap kelompok
 - **Time axis**: 0-23 hours (full circadian cycle)
 
-**Observed Patterns:**
-- **Morning**: Control group shows sharp rise, depression delayed/blunted
-- **Midday**: Both groups active, but depression lower overall
-- **Evening**: Marked divergence - control maintained, depression drops
-- **Night**: Both low (sleep), but depression more variable
+**Tujuan Analisis:**
+Visualisasi pola aktivitas 24 jam memungkinkan:
+- Identifikasi perbedaan temporal antara kelompok
+- Validasi biological plausibility dari pola yang ditemukan
+- Alignment dengan teori chronobiological depression
+- Identifikasi waktu-waktu kritis yang membedakan kelompok
 
-**Clinical Interpretation:**
-This visualization **validates the model** - it found patterns that:
-- ✅ Align with known depression phenomenology
-- ✅ Match clinical observations (morning difficulty, evening withdrawal)
-- ✅ Support chronobiological theories of depression
-- ✅ Suggest intervention targets (morning activation, evening engagement)
+**Clinical Relevance:**
+- Morning patterns: Indikator psychomotor retardation
+- Evening patterns: Social engagement dan withdrawal
+- Night patterns: Sleep quality dan circadian alignment
+- Variability patterns: Rhythm strength dan consistency
 
-### 11.4 Feature Importance Bars
+### 10.4 Feature Importance Bars
 
 **Purpose:** Explain what model learned
 
@@ -1909,13 +1863,26 @@ This visualization **validates the model** - it found patterns that:
 - **Color gradient**: Visual emphasis on top features
 - **Threshold line**: Mark cutoff for "important" features
 
-**Insights for Stakeholders:**
-- **Clinicians**: Which assessments most predictive?
-- **Researchers**: Which mechanisms warrant investigation?
-- **Patients**: What behaviors to monitor?
-- **Developers**: Which sensors/features to prioritize?
+**Aplikasi Feature Importance:**
 
-### 11.5 Model Comparison Chart
+**Untuk Decision Tree:**
+Feature importance dihitung berdasarkan total reduction dalam Gini impurity:
+
+$$Importance(f) = \sum_{nodes\ using\ f} \frac{n_{node}}{n_{total}} \cdot \Delta Impurity$$
+
+Dimana:
+- $f$ = feature tertentu
+- $n_{node}$ = jumlah samples di node
+- $n_{total}$ = total training samples
+- $\Delta Impurity$ = pengurangan impurity dari split
+
+**Insights untuk Stakeholders:**
+- **Clinicians**: Features mana yang paling predictive?
+- **Researchers**: Mechanisms mana yang perlu investigasi lebih lanjut?
+- **Patients**: Behaviors apa yang perlu dimonitor?
+- **Developers**: Sensors/features mana yang harus diprioritaskan?
+
+### 10.5 Model Comparison Chart
 
 **Purpose:** Facilitate model selection decision
 
@@ -1926,15 +1893,21 @@ This visualization **validates the model** - it found patterns that:
 - **Ranking**: Visual hierarchy of performance
 
 **Decision Support:**
-Chart makes it **immediately clear**:
-- Which model best overall
-- Which excel at specific metrics
-- Which have stable vs volatile performance
-- Confidence in model choice
+Chart memfasilitasi keputusan pemilihan model berdasarkan:
+- Overall performance across metrics
+- Specific metric excellence (e.g., recall untuk medical screening)
+- Stability vs volatility (error bars dari CV)
+- Trade-offs antara different performance aspects
+
+**Prinsip Perbandingan:**
+- Tidak ada single "best" metric - context dependent
+- Medical applications: Recall/sensitivity often prioritized (avoid false negatives)
+- Stability important untuk production deployment
+- Multiple metrics provide comprehensive view
 
 ---
 
-## 1️⃣2️⃣ KESIMPULAN METODOLOGI
+## 1️⃣1️⃣ KESIMPULAN METODOLOGI
 
 ### 12.1 Ringkasan Kontribusi Metodologis
 
@@ -1971,11 +1944,11 @@ Model training pada compact, informative feature set → better generalization
 #### C) Multi-Strategy Imbalance Handling
 **Kontribusi:**
 - **5 strategies** systematically compared
-- Demonstrates ADASYN superiority untuk this problem
-- Provides guidance untuk similar medical datasets
+- Provides empirical comparison untuk medical datasets
+- Framework untuk systematic evaluation
 
 **Value:**
-Shows no one-size-fits-all solution - empirical testing essential
+Demonstrates importance of empirical testing - no one-size-fits-all solution
 
 #### D) Rigorous Evaluation Framework
 **Kontribusi:**
@@ -1989,63 +1962,66 @@ Shows no one-size-fits-all solution - empirical testing essential
 - Interpretability of findings
 - Replicability of methods
 
-### 12.2 Temuan Klinis Utama
+### 11.2 Implikasi Klinis Potensial
 
 #### A) Motor Activity sebagai Depression Biomarker
 
-**Evidence:**
-Model achieves 100% test accuracy menggunakan activity data alone, suggesting:
-- **Strong signal**: Depression has distinct motorik signature
-- **Objective assessment feasible**: Complements subjective scales
-- **Potential screening tool**: Aktigrafi could aid diagnosis
+**Potensi:**
+Penggunaan data aktivitas motorik untuk klasifikasi depresi menawarkan:
+- **Objective assessment**: Complement terhadap subjective scales
+- **Continuous monitoring**: Data 24/7 vs snapshot clinical visits
+- **Non-invasive**: Sensor wearable yang tidak mengganggu
+- **Quantitative**: Metrics yang dapat diukur dan dibandingkan
 
-**Clinical Implications:**
-- **Objective monitoring**: Reduce reliance pada self-report (yang bisa biased)
-- **Continuous assessment**: 24/7 data vs snapshot clinical visits
-- **Treatment response**: Monitor improvement via activity normalization
-- **Relapse prediction**: Detect patterns preceding relapse
+**Aplikasi Klinis Potensial:**
+- **Screening tool**: Identifikasi early warning signs
+- **Treatment monitoring**: Track response terhadap intervention
+- **Relapse prediction**: Detect patterns sebelum relapse
+- **Personalized care**: Tailor interventions berdasarkan patterns individual
 
-#### B) Chronobiological Signature
+#### B) Pendekatan Chronobiological
 
-**Key Finding:**
-Top features predominantly temporal dan circadian:
-- Evening activity reduction (#1 importance)
-- Circadian rhythm disruption (#2 importance)
-- Day-night differentiation loss (#3 importance)
+**Fokus Temporal dan Circadian:**
+Metodologi menekankan pentingnya:
+- Temporal patterning aktivitas (when, not just how much)
+- Circadian rhythm integrity
+- Day-night differentiation
+- Sleep-wake cycle regularity
 
-**Mechanistic Insight:**
-Depression fundamentally a **chronobiological disorder**:
-- Not just "low activity" but "disrupted rhythms"
-- Supports theories linking depression to circadian dysfunction
-- Aligns with efficacy of chronotherapeutic interventions
-
-**Treatment Implications:**
+**Implikasi untuk Intervensi:**
 - **Chronotherapy**: Light therapy, sleep restriction
-- **Activity scheduling**: Structure daily routines
+- **Activity scheduling**: Structured daily routines
 - **Circadian hygiene**: Regular sleep-wake times
+- **Behavioral activation**: Timing-sensitive interventions
 
-#### C) Specificity of Patterns
+#### C) Heterogeneity dalam Depression
 
-**Observation:**
-Model discriminates well despite heterogeneity dalam depression:
-- Various severity levels
-- Different subtypes (melancholic vs atypical)
-- Comorbidities present
+**Pertimbangan:**
+Depresi merupakan kondisi heterogen dengan:
+- Various severity levels (mild, moderate, severe)
+- Different subtypes (melancholic, atypical, psychotic)
+- Comorbidities (anxiety, substance abuse)
+- Individual variations dalam presentation
 
-**Interpretation:**
-Core motor/circadian dysfunction transcends subtypes - a **common pathway** across depression presentations
+**Implikasi Metodologi:**
+Perlunya pendekatan yang dapat:
+- Capture core features across subtypes
+- Account untuk individual variability
+- Extend ke multi-class classification (severity, subtypes)
+- Integrate dengan clinical assessments
 
-### 12.3 Keterbatasan dan Pertimbangan
+### 11.3 Keterbatasan dan Pertimbangan
 
 **A) Sample Size**
-- **n = 55**: Modest untuk ML standards
-- **Test n = 11**: Perfect performance should be interpreted cautiously
-- **Confidence intervals**: Wide due to small n
+- **Small datasets**: Challenges untuk machine learning
+- **Limited test set**: Confidence intervals dapat wide
+- **Overfitting risk**: High dimensionality relative to samples
 
-**Mitigation:**
-- Cross-validation provides robustness
-- Results consistent across folds
-- **Need**: External validation pada independent cohort
+**Mitigation Strategies:**
+- Cross-validation untuk robust estimation
+- Feature selection untuk reduce dimensionality
+- Regularization dan hyperparameter tuning
+- External validation essential untuk generalizability
 
 **B) Generalizability**
 - **Single dataset**: From specific clinical setting
@@ -2081,7 +2057,7 @@ Core motor/circadian dysfunction transcends subtypes - a **common pathway** acro
 - Clinical decision support
 - Validation studies in practice
 
-### 12.4 Arah Pengembangan Selanjutnya
+### 11.4 Arah Pengembangan Selanjutnya
 
 #### Short-Term (Immediate Next Steps)
 
@@ -2154,9 +2130,9 @@ Core motor/circadian dysfunction transcends subtypes - a **common pathway** acro
 - **Lesson**: Smart methods can overcome limited samples
 
 **3. Imbalance Handling Matters**
-- ADASYN provided 5% improvement
-- Strategy choice depends on algorithm
-- **Lesson**: Always try multiple approaches
+- Different strategies have different effects
+- Strategy choice depends on algorithm dan data characteristics
+- **Lesson**: Always try multiple approaches empirically
 
 **4. Interpretability = Trust**
 - Decision tree visualization aids clinical acceptance
@@ -2266,10 +2242,11 @@ Metodologi penelitian ini mendemonstrasikan **pendekatan sistematis dan rigorous
 ✅ **Transparent**: Limitations acknowledged, assumptions explicit
 
 **Key Achievement:**
-Pengembangan model klasifikasi depresi dengan **100% test accuracy** menggunakan activity data, dengan methodology yang:
+Pengembangan framework klasifikasi depresi menggunakan activity data dengan methodology yang:
+- Systematic dan reproducible
 - Dapat direplikasi oleh peneliti lain
 - Dapat diterapkan pada domains serupa
-- Dapat dikembangkan menjadi clinical tool
+- Foundation untuk clinical tool development
 
 **Broader Impact:**
 Penelitian ini contributes to:
