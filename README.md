@@ -1,7 +1,7 @@
 # Depression Classification Research
 
 ## 🎯 Tujuan Penelitian
-Klasifikasi depresi menggunakan **Gaussian Naive Bayes** dan **Decision Tree** pada data aktivitas motorik yang imbalanced untuk publikasi di **Jurnal Sinta 1**.
+Klasifikasi depresi menggunakan **Gaussian Naive Bayes** dan **Decision Tree** pada data aktivitas motorik yang imbalanced.
 
 ## 📊 Dataset
 **Depression Motor Activity Database (Depresjon)**
