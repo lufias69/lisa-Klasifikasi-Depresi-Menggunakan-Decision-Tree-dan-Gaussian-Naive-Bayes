@@ -125,7 +125,7 @@ flowchart TD
     
     StatTest --> BestModel[1️⃣2️⃣ BEST MODEL SELECTION]
     
-    Winner --> Visualization[1️⃣3️⃣ VISUALIZATION]
+    BestModel --> Visualization[1️⃣3️⃣ VISUALIZATION]
     Visualization --> ConfMatrix[Confusion Matrix]
     Visualization --> ROCCurve[ROC Curves]
     Visualization --> FeatureImp[Feature Importance]
