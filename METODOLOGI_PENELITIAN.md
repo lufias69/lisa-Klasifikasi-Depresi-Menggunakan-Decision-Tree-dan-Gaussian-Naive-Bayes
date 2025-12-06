@@ -426,6 +426,10 @@ $$P_p = x_{(n \cdot p/100)}$$
 
 Dimana percentile membagi data terurut menjadi 100 bagian sama.
 
+### 3.2 Temporal Features (33 features)
+
+**Tujuan:** Menangkap pola aktivitas berdasarkan waktu
+
 #### a) Aktivitas Per Jam (24 features)
 Ekstraksi rata-rata aktivitas untuk setiap jam (00:00-23:00).
 
@@ -471,23 +475,7 @@ Membandingkan aktivitas hari kerja dengan akhir pekan.
 
 ### 3.3 Fitur Tidur (8 features)
 
-**Motivasi:** Gangguan tidur adalah salah satu gejala kardinal depresimin(),
-    'activity_max': df['activity'].max(),
-    'activity_median': df['activity'].median(),
-    'activity_variance': df['activity'].var(),
-    'activity_range': df['activity'].max() - df['activity'].min(),
-    'activity_iqr': df['activity'].quantile(0.75) - df['activity'].quantile(0.25),
-    'activity_skewness': df['activity'].skew(),
-    'activity_kurtosis': df['activity'].kurtosis()
-}
-```
-
-#### Advanced Statistics
-- **Coefficient of Variation**: `std / mean`
-- **Percentiles**: P10, P25, P75, P90
-- **Zero Crossings**: Jumlah crossing mean
-
-### 3.2 Temporal Features (33 features)
+**Motivasi:** Gangguan tidur adalah salah satu gejala kardinal depresi
 
 #### Deteksi Tidur dari Data Aktivitas
 
@@ -509,6 +497,20 @@ Jumlah total menit/jam tidur dalam periode observasi.
 Berapa kali tidur terjadi dalam periode observasi.
 - **Fragmented sleep**: Banyak episode pendek (sleep maintenance insomnia)
 - **Consolidated sleep**: Satu episode panjang (tidur normal)
+
+**c) Sleep Duration Metrics**
+- Average sleep duration per episode
+- Total sleep time across observation period
+- Sleep efficiency (sleep time / time in bed)
+
+**d) Sleep Timing**
+- Average sleep onset hour
+- Average wake time hour
+- Sleep-wake consistency (standard deviation of sleep/wake times)
+
+### 3.4 Fitur Circadian (6 features)
+
+**Tujuan:** Mengkuantifikasi ritme sirkadian dari pola aktivitas
 
 #### Analisis Cosinor
 
@@ -565,7 +567,9 @@ Dimana:
 - High IV: Aktivitas sangat fluktuatif, tidak smooth
 - Low IV: Aktivitas smooth dan regular
 
-### 3.3 Fitur Pola Aktivitas (11 features)
+### 3.5 Fitur Pola Aktivitas (11 features)
+
+**Tujuan:** Menangkap karakteristik dinamis dan variabilitas aktivitas
 
 #### a) Rolling Window Statistics
 Menghitung standard deviation dalam sliding windows berbagai ukuran (1 jam, 3 jam, 6 jam).
