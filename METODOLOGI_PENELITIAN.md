@@ -1424,7 +1424,7 @@ Dimana:
 $$Entropy(S) = -\sum_{i=1}^{C} p_i \log_2(p_i)$$
 
 **Information Gain setelah split:**
-$$IG(S, j, t) = Entropy(S) - \left[\frac{n_{left}}{n}Entropy(S_{left}) + \frac{n_{right}}{n}Entropy(S_{right}}\right]$$
+$$IG(S, j, t) = Entropy(S) - \left[\frac{n_{left}}{n}Entropy(S_{left}) + \frac{n_{right}}{n}Entropy(S_{right})\right]$$
 
 Dimana:
 - $Entropy = 0$ → pure node
