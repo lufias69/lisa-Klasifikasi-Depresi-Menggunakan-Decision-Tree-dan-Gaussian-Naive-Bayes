@@ -561,7 +561,12 @@ Dimana:
 - $x_i$ = aktivitas pada time point i
 - Higher IV = more fragmented rhythm
 
+**Interpretasi:**
 - High IV: Aktivitas sangat fluktuatif, tidak smooth
+- Low IV: Aktivitas smooth dan regular
+
+### 3.3 Fitur Pola Aktivitas (11 features)
+
 #### a) Rolling Window Statistics
 Menghitung standard deviation dalam sliding windows berbagai ukuran (1 jam, 3 jam, 6 jam).
 
@@ -636,100 +641,6 @@ Identifikasi episode aktivitas tinggi yang singkat dan intens.
 - Activity patterns: 11 features
 
 **Filosofi:** Feature set ini komprehensif namun redundan. Tahap selanjutnya (feature selection) akan memilih subset optimal.
-
----ep_mask = df['activity'] < SLEEP_THRESHOLD
-sleep_periods = identify_continuous_periods(sleep_mask, MIN_SLEEP_DURATION)
-```
-
-#### Sleep Metrics
-- **Total Sleep Time**: Sum of all sleep periods
-- **Number of Sleep Periods**: Fragmentation indicator
-- **Average Sleep Duration**: Mean sleep episode length
-- **Sleep Onset Hour**: Average bedtime
-- **Wake Time Hour**: Average wake time
-- **Sleep Efficiency**: Sleep time / total time
-- **Sleep Fragmentation**: Number of interruptions
-
-### 3.4 Circadian Features (6 features)
-
-#### Cosinor Analysis
-```python
-from scipy.optimize import curve_fit
-
-def cosinor_model(t, mesor, amplitude, acrophase):
-    """
-    Cosinor model for circadian rhythm
-    mesor: Mean level
-    amplitude: Peak-to-trough difference / 2
-    acrophase: Time of peak
-    """
-    return mesor + amplitude * np.cos(2*np.pi*(t - acrophase)/24)
-
-# Fit to hourly data
-hours = np.arange(24)
-hourly_activity = [df[df.index.hour == h]['activity'].mean() for h in hours]
-
-params, _ = curve_fit(cosinor_model, hours, hourly_activity)
-mesor, amplitude, acrophase = params
-```
-
-**Features:**
-- `circadian_mesor`: Baseline activity level
-- `circadian_amplitude`: Rhythm strength
-- `circadian_acrophase`: Peak time
-- `circadian_rhythm_strength`: Goodness of fit
-- `circadian_phase_shift`: Deviation from normal
-- `intradaily_variability`: Within-day fragmentation
-
-#### Autocorrelation
-```python
-# 24-hour lag autocorrelation
-from statsmodels.tsa.stattools import acf
-autocorr_24h = acf(hourly_activity, nlags=24)[24]
-```
-
-### 3.5 Activity Pattern Features (11 features)
-
-#### Variability Metrics
-```python
-# Rolling window statistics
-rolling_1h = df['activity'].rolling(window=60).std()
-rolling_3h = df['activity'].rolling(window=180).std()
-rolling_6h = df['activity'].rolling(window=360).std()
-
-features['rolling_std_1h'] = rolling_1h.mean()
-features['activity_change_rate'] = df['activity'].diff().abs().mean()
-```
-
-#### Transition Analysis
-```python
-# Activity level transitions
-ACTIVITY_LEVELS = ['low', 'medium', 'high']
-thresholds = df['activity'].quantile([0.33, 0.67])
-
-def categorize_activity(value):
-    if value < thresholds[0.33]:
-        return 'low'
-    elif value < thresholds[0.67]:
-        return 'medium'
-    else:
-        return 'high'
-
-df['activity_level'] = df['activity'].apply(categorize_activity)
-transitions = (df['activity_level'] != df['activity_level'].shift()).sum()
-transitions_per_hour = transitions / (len(df) / 60)
-```
-
-#### Entropy
-```python
-from scipy.stats import entropy
-
-# Activity distribution entropy
-hist, _ = np.histogram(df['activity'], bins=50)
-activity_entropy = entropy(hist + 1e-10)
-```
-
-**Total Features Extracted: 73**
 
 ---
 
