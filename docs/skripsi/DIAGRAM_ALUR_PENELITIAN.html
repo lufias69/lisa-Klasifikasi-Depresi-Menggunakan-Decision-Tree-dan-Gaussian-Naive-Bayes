@@ -1,0 +1,196 @@
+<h1 id="diagram-alur-penelitian">📊 DIAGRAM ALUR PENELITIAN</h1>
+<h2 id="klasifikasi-depresi-menggunakan-machine-learning-pada-data-aktivitas-motorik">Klasifikasi Depresi menggunakan Machine Learning pada Data Aktivitas Motorik</h2>
+<hr />
+<h2 id="diagram-alur-lengkap">Diagram Alur Lengkap</h2>
+<pre class="mermaid"><code>flowchart TD
+    Start([Mulai Penelitian]) --&gt; DataCollection[📁 Pengumpulan Data]
+    
+    DataCollection --&gt; DataDesc{Deskripsi Data}
+    DataDesc --&gt; Condition[Condition Group&lt;br/&gt;23 subjek depresi]
+    DataDesc --&gt; Control[Control Group&lt;br/&gt;32 subjek sehat]
+    DataDesc --&gt; Scores[Scores Data&lt;br/&gt;MADRS &amp; HDRS]
+    
+    Condition --&gt; DataLoading[1️⃣ DATA LOADING]
+    Control --&gt; DataLoading
+    Scores --&gt; DataLoading
+    
+    DataLoading --&gt; LoadTS[Load Time Series&lt;br/&gt;Activity Data]
+    LoadTS --&gt; LoadScores[Load Clinical Scores]
+    LoadScores --&gt; TotalData[Total: 55 Subjek&lt;br/&gt;23 Condition + 32 Control]
+    
+    TotalData --&gt; Preprocessing[2️⃣ PREPROCESSING]
+    
+    Preprocessing --&gt; PreStep1[Handling Missing Values&lt;br/&gt;Forward Fill Method]
+    PreStep1 --&gt; PreStep2[Outlier Detection&lt;br/&gt;IQR Method]
+    PreStep2 --&gt; PreStep3[Data Normalization&lt;br/&gt;Z-Score]
+    PreStep3 --&gt; PreStep4[Time Alignment&lt;br/&gt;Hourly Resampling]
+    
+    PreStep4 --&gt; FeatureExt[3️⃣ FEATURE EXTRACTION]
+    
+    FeatureExt --&gt; StatFeatures[Statistical Features&lt;br/&gt;Mean, Std, Variance, etc.]
+    FeatureExt --&gt; TimeFeatures[Temporal Features&lt;br/&gt;Hourly, Daily, Weekly]
+    FeatureExt --&gt; SleepFeatures[Sleep Features&lt;br/&gt;Duration, Onset, Wake Time]
+    FeatureExt --&gt; CircadianFeatures[Circadian Features&lt;br/&gt;Rhythm Strength, Acrophase]
+    FeatureExt --&gt; ActivityFeatures[Activity Features&lt;br/&gt;Peak, Valley, Transitions]
+    
+    StatFeatures --&gt; FeatureMatrix[Feature Matrix&lt;br/&gt;73 Features × 55 Samples]
+    TimeFeatures --&gt; FeatureMatrix
+    SleepFeatures --&gt; FeatureMatrix
+    CircadianFeatures --&gt; FeatureMatrix
+    ActivityFeatures --&gt; FeatureMatrix
+    
+    FeatureMatrix --&gt; EDA[4️⃣ EXPLORATORY DATA ANALYSIS]
+    
+    EDA --&gt; EDAViz1[Distribution Analysis]
+    EDA --&gt; EDAViz2[Correlation Analysis]
+    EDA --&gt; EDAViz3[Class Balance Check]
+    EDA --&gt; EDAViz4[Feature Importance]
+    
+    EDAViz1 --&gt; FeatureSelection[5️⃣ FEATURE SELECTION]
+    EDAViz2 --&gt; FeatureSelection
+    EDAViz3 --&gt; FeatureSelection
+    EDAViz4 --&gt; FeatureSelection
+    
+    FeatureSelection --&gt; VarThreshold[Variance Threshold&lt;br/&gt;Remove Low Variance]
+    VarThreshold --&gt; CorrFilter[Correlation Filter&lt;br/&gt;Remove Redundancy]
+    CorrFilter --&gt; SelectKBest[SelectKBest&lt;br/&gt;Chi-Square Test]
+    SelectKBest --&gt; SelectedFeatures[Selected Features&lt;br/&gt;30 Features]
+    
+    SelectedFeatures --&gt; DataSplit[6️⃣ DATA SPLITTING]
+    
+    DataSplit --&gt; TrainSet[Training Set&lt;br/&gt;80% Data]
+    DataSplit --&gt; TestSet[Test Set&lt;br/&gt;20% Data]
+    
+    TrainSet --&gt; ImbalanceHandle[7️⃣ IMBALANCED DATA HANDLING]
+    
+    ImbalanceHandle --&gt; Strategy1[Strategy 1: Original&lt;br/&gt;No Handling]
+    ImbalanceHandle --&gt; Strategy2[Strategy 2: Class Weights&lt;br/&gt;Balanced Weights]
+    ImbalanceHandle --&gt; Strategy3[Strategy 3: SMOTE&lt;br/&gt;Synthetic Oversampling]
+    ImbalanceHandle --&gt; Strategy4[Strategy 4: ADASYN&lt;br/&gt;Adaptive Sampling]
+    ImbalanceHandle --&gt; Strategy5[Strategy 5: SMOTE+Weights&lt;br/&gt;Combined Approach]
+    
+    Strategy1 --&gt; ModelTraining[8️⃣ MODEL TRAINING]
+    Strategy2 --&gt; ModelTraining
+    Strategy3 --&gt; ModelTraining
+    Strategy4 --&gt; ModelTraining
+    Strategy5 --&gt; ModelTraining
+    
+    ModelTraining --&gt; GNB[Gaussian Naive Bayes&lt;br/&gt;5 Variants]
+    ModelTraining --&gt; DT[Decision Tree&lt;br/&gt;5 Variants]
+    
+    GNB --&gt; TotalModels[Total: 10 Models&lt;br/&gt;2 Algorithms × 5 Strategies]
+    DT --&gt; TotalModels
+    
+    TotalModels --&gt; CrossVal[9️⃣ CROSS-VALIDATION]
+    CrossVal --&gt; CV5Fold[5-Fold CV&lt;br/&gt;Training Performance]
+    
+    CV5Fold --&gt; TestEval[🔟 TEST EVALUATION]
+    TestEval --&gt; Metrics[Performance Metrics&lt;br/&gt;Accuracy, Precision, Recall&lt;br/&gt;F1-Score, AUC-ROC]
+    
+    Metrics --&gt; ModelComp[1️⃣1️⃣ MODEL COMPARISON]
+    ModelComp --&gt; StatTest[Statistical Tests&lt;br/&gt;Friedman Test&lt;br/&gt;Wilcoxon Test]
+    
+    StatTest --&gt; BestModel[1️⃣2️⃣ BEST MODEL SELECTION]
+    
+    BestModel --&gt; Visualization[1️⃣3️⃣ VISUALIZATION]
+    Visualization --&gt; ConfMatrix[Confusion Matrix]
+    Visualization --&gt; ROCCurve[ROC Curves]
+    Visualization --&gt; FeatureImp[Feature Importance]
+    Visualization --&gt; ActivityPattern[Activity Patterns]
+    Visualization --&gt; ModelComp2[Model Comparison]
+    
+    ConfMatrix --&gt; Results[1️⃣4️⃣ HASIL &amp; KESIMPULAN]
+    ROCCurve --&gt; Results
+    FeatureImp --&gt; Results
+    ActivityPattern --&gt; Results
+    ModelComp2 --&gt; Results
+    
+    Results --&gt; End([Selesai])
+    
+    style Start fill:#e1f5e1
+    style End fill:#e1f5e1
+    style BestModel fill:#90EE90
+    style DataCollection fill:#E6F3FF
+    style Preprocessing fill:#FFE6F0
+    style FeatureExt fill:#FFF4E6
+    style EDA fill:#F0E6FF
+    style FeatureSelection fill:#E6FFF9
+    style ModelTraining fill:#FFE6E6
+    style Results fill:#FFFFCC</code></pre>
+<hr />
+<h2 id="penjelasan-tahapan-penelitian">Penjelasan Tahapan Penelitian</h2>
+<h3 id="pengumpulan-data-data-collection">1. Pengumpulan Data (Data Collection)</h3>
+<ul>
+<li><strong>Condition Group</strong>: 23 subjek dengan depresi mayor</li>
+<li><strong>Control Group</strong>: 32 subjek sehat</li>
+<li><strong>Scores Data</strong>: Data skor klinis MADRS dan HDRS</li>
+<li><strong>Total</strong>: 55 subjek dengan data aktivitas motorik time series</li>
+</ul>
+<h3 id="data-loading">2. Data Loading</h3>
+<ul>
+<li>Load data time series aktivitas motorik dari file CSV</li>
+<li>Load data skor klinis</li>
+<li>Integrasi data berdasarkan ID subjek</li>
+</ul>
+<h3 id="preprocessing">3. Preprocessing</h3>
+<p>Tahapan pembersihan dan persiapan data: - <strong>Handling Missing Values</strong>: Metode forward fill untuk mengisi nilai kosong - <strong>Outlier Detection</strong>: Metode IQR untuk mendeteksi dan menangani outlier - <strong>Data Normalization</strong>: Z-score standardization - <strong>Time Alignment</strong>: Resampling ke interval hourly untuk konsistensi</p>
+<h3 id="feature-extraction">4. Feature Extraction</h3>
+<p>Ekstraksi 73 fitur dari data time series: - <strong>Statistical Features</strong>: Mean, standard deviation, variance, skewness, kurtosis, dll. - <strong>Temporal Features</strong>: Pola aktivitas per jam, harian, dan mingguan - <strong>Sleep Features</strong>: Durasi tidur, waktu onset, waktu bangun - <strong>Circadian Features</strong>: Kekuatan ritme, acrophase, amplitude - <strong>Activity Features</strong>: Peak activity, valley, transisi aktivitas</p>
+<h3 id="exploratory-data-analysis-eda">5. Exploratory Data Analysis (EDA)</h3>
+<p>Analisis eksplorasi untuk memahami data: - <strong>Distribution Analysis</strong>: Distribusi fitur untuk setiap kelas - <strong>Correlation Analysis</strong>: Korelasi antar fitur - <strong>Class Balance Check</strong>: Verifikasi ketidakseimbangan kelas - <strong>Feature Importance</strong>: Identifikasi fitur yang paling informatif</p>
+<h3 id="feature-selection">6. Feature Selection</h3>
+<p>Reduksi dimensi dari 73 fitur menjadi 30 fitur: - <strong>Variance Threshold</strong>: Menghapus fitur dengan varians rendah - <strong>Correlation Filter</strong>: Menghapus fitur yang sangat berkorelasi (redundan) - <strong>SelectKBest</strong>: Seleksi fitur terbaik menggunakan Chi-Square test</p>
+<h3 id="data-splitting">7. Data Splitting</h3>
+<ul>
+<li><strong>Training Set</strong>: 80% data untuk pelatihan model</li>
+<li><strong>Test Set</strong>: 20% data untuk evaluasi final</li>
+</ul>
+<h3 id="imbalanced-data-handling">8. Imbalanced Data Handling</h3>
+<p>Lima strategi penanganan data tidak seimbang: 1. <strong>Original</strong>: Tanpa penanganan (baseline) 2. <strong>Class Weights</strong>: Pembobotan kelas yang seimbang 3. <strong>SMOTE</strong>: Synthetic Minority Over-sampling Technique 4. <strong>ADASYN</strong>: Adaptive Synthetic Sampling 5. <strong>SMOTE + Weights</strong>: Kombinasi SMOTE dan class weights</p>
+<h3 id="model-training">9. Model Training</h3>
+<p>Pelatihan 10 model: - <strong>Gaussian Naive Bayes</strong>: 5 varian (sesuai 5 strategi) - <strong>Decision Tree</strong>: 5 varian (sesuai 5 strategi)</p>
+<h3 id="cross-validation">10. Cross-Validation</h3>
+<ul>
+<li><strong>5-Fold Cross-Validation</strong> pada training set</li>
+<li>Evaluasi performa model selama pelatihan</li>
+<li>Validasi stabilitas dan konsistensi model</li>
+</ul>
+<h3 id="test-evaluation">11. Test Evaluation</h3>
+<p>Evaluasi pada test set menggunakan metrik: - <strong>Accuracy</strong>: Akurasi keseluruhan - <strong>Precision</strong>: Ketepatan prediksi positif - <strong>Recall (Sensitivity)</strong>: Kemampuan deteksi kasus positif - <strong>F1-Score</strong>: Harmonic mean precision dan recall - <strong>AUC-ROC</strong>: Area under ROC curve</p>
+<h3 id="model-comparison">12. Model Comparison</h3>
+<ul>
+<li><strong>Friedman Test</strong>: Uji statistik untuk membandingkan multiple models</li>
+<li><strong>Wilcoxon Test</strong>: Pairwise comparison antar model</li>
+<li>Identifikasi perbedaan signifikan antar strategi</li>
+</ul>
+<h3 id="best-model-selection">13. Best Model Selection</h3>
+<p>Pemilihan model terbaik berdasarkan: - Performa metrik evaluasi - Hasil uji statistik - Stabilitas cross-validation - Interpretabilitas</p>
+<h3 id="visualization">14. Visualization</h3>
+<p>Visualisasi hasil penelitian: - <strong>Confusion Matrix</strong>: Matriks kesalahan klasifikasi - <strong>ROC Curves</strong>: Kurva ROC untuk semua model - <strong>Feature Importance</strong>: Ranking fitur paling penting - <strong>Activity Patterns</strong>: Pola aktivitas condition vs control - <strong>Model Comparison</strong>: Perbandingan performa antar model</p>
+<h3 id="hasil-kesimpulan">15. Hasil &amp; Kesimpulan</h3>
+<ul>
+<li>Ringkasan temuan penelitian</li>
+<li>Interpretasi hasil</li>
+<li>Implikasi klinis</li>
+<li>Rekomendasi dan penelitian lanjutan</li>
+</ul>
+<hr />
+<h2 id="catatan-penting">Catatan Penting</h2>
+<h3 id="keunikan-pendekatan">Keunikan Pendekatan</h3>
+<ol type="1">
+<li><strong>Multi-Strategy Comparison</strong>: Membandingkan 5 strategi penanganan data tidak seimbang</li>
+<li><strong>Two Algorithms</strong>: Gaussian Naive Bayes dan Decision Tree untuk perspektif berbeda</li>
+<li><strong>Comprehensive Metrics</strong>: Evaluasi menyeluruh dengan 5 metrik utama</li>
+<li><strong>Statistical Validation</strong>: Penggunaan uji statistik untuk validasi hasil</li>
+</ol>
+<h3 id="output-penelitian">Output Penelitian</h3>
+<ul>
+<li>10 model terlatih (2 algoritma × 5 strategi)</li>
+<li>Dataset fitur mentah (73 fitur)</li>
+<li>Dataset fitur terseleksi (30 fitur)</li>
+<li>Hasil evaluasi lengkap</li>
+<li>Visualisasi dan grafik</li>
+<li>Model terbaik untuk deployment</li>
+</ul>
+<hr />
+<p><strong>Dokumen ini merupakan representasi visual dari alur penelitian lengkap, dari pengumpulan data hingga kesimpulan.</strong></p>
